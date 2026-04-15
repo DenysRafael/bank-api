@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bank API</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #1a1a1a;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  header {
+    background: #242424;
+    border-bottom: 1px solid #333;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  header h1 { font-size: 16px; font-weight: 600; color: #fff; }
+  header h1 span { color: #4caf7d; }
+
+  .status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #888; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #888; }
+
+  .container { max-width: 960px; margin: 0 auto; padding: 24px; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+
+  .stat {
+    background: #242424;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 16px;
+  }
+
+  .stat-label { font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+  .stat-value { font-size: 22px; font-weight: 600; color: #fff; }
+  .stat-value.green { color: #4caf7d; }
+
+  .tabs { display: flex; gap: 2px; margin-bottom: 20px; border-bottom: 1px solid #333; }
+
+  .tab {
+    padding: 8px 16px;
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 13px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.15s;
+  }
+
+  .tab:hover { color: #ccc; }
+  .tab.active { color: #4caf7d; border-bottom-color: #4caf7d; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .card {
+    background: #242424;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .card-title { font-size: 13px; font-weight: 600; color: #ccc; margin-bottom: 16px; }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 0.6px; }
+
+  input, select {
+    background: #1a1a1a;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    padding: 8px 10px;
+    color: #e0e0e0;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  input:focus, select:focus { border-color: #4caf7d; }
+  select option { background: #1a1a1a; }
+
+  .btn { padding: 8px 18px; border-radius: 4px; border: none; font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity 0.15s; }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: #4caf7d; color: #fff; }
+  .btn-danger { background: #c0392b; color: #fff; padding: 5px 12px; font-size: 12px; }
+  .btn-deposit { background: #2e7d52; color: #fff; width: 100%; }
+  .btn-withdraw { background: #7d2e2e; color: #fff; width: 100%; }
+
+  .form-footer { margin-top: 16px; display: flex; justify-content: flex-end; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: #555; padding: 8px 12px; text-align: left; border-bottom: 1px solid #333; }
+  td { padding: 10px 12px; border-bottom: 1px solid #2a2a2a; color: #ccc; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #2a2a2a; }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 500; }
+  .badge-green { background: #1e3d2f; color: #4caf7d; }
+  .badge-blue { background: #1e2d3d; color: #5b9bd5; }
+
+  .tx-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .empty { text-align: center; padding: 32px; color: #444; font-size: 13px; }
+
+  .toast-wrap { position: fixed; top: 16px; right: 16px; z-index: 99; display: flex; flex-direction: column; gap: 8px; }
+  .toast { padding: 10px 16px; border-radius: 4px; font-size: 13px; font-weight: 500; animation: fi 0.2s ease; max-width: 280px; }
+  .toast.ok { background: #1e3d2f; border: 1px solid #2e5c43; color: #4caf7d; }
+  .toast.err { background: #3d1e1e; border: 1px solid #5c2e2e; color: #e57373; }
+  @keyframes fi { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+
+  @media (max-width: 600px) {
+    .stats { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+    .tx-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<header>
+  <h1>Bank<span>API</span></h1>
+  <div class="status">
+    <div class="dot" id="dot"></div>
+    <span id="statusTxt">conectando...</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">Contas ativas</div>
+      <div class="stat-value" id="totalContas">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Saldo total</div>
+      <div class="stat-value green" id="totalSaldo">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Endpoint</div>
+      <div class="stat-value" style="font-size:13px; color:#444; margin-top:4px;">localhost:8080/api</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('contas', this)">Contas</button>
+    <button class="tab" onclick="showTab('nova', this)">Nova conta</button>
+    <button class="tab" onclick="showTab('transacoes', this)">Transações</button>
+  </div>
+
+  <div class="panel active" id="tab-contas">
+    <div class="card">
+      <div class="card-title">Contas ativas</div>
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Titular</th><th>CPF</th><th>Tipo</th><th>Saldo</th><th>Data</th><th></th></tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="7" class="empty">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel" id="tab-nova">
+    <div class="card">
+      <div class="card-title">Cadastrar nova conta</div>
+      <div class="form-row">
+        <div class="field">
+          <label>Nome do titular</label>
+          <input type="text" id="nome" placeholder="Ex: João Silva">
+        </div>
+        <div class="field">
+          <label>CPF (somente números)</label>
+          <input type="text" id="cpf" placeholder="12345678900" maxlength="11">
+        </div>
+        <div class="field">
+          <label>Tipo de conta</label>
+          <select id="tipo">
+            <option value="CORRENTE">Conta Corrente</option>
+            <option value="POUPANCA">Conta Poupança</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Saldo inicial (R$)</label>
+          <input type="number" id="saldo" placeholder="0.00" min="0" step="0.01">
+        </div>
+      </div>
+      <div class="form-footer">
+        <button class="btn btn-primary" onclick="criar()">Criar conta</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="tab-transacoes">
+    <div class="tx-grid">
+      <div class="card">
+        <div class="card-title">Depósito</div>
+        <div class="field" style="margin-bottom:12px">
+          <label>ID da conta</label>
+          <input type="number" id="depId" placeholder="1">
+        </div>
+        <div class="field" style="margin-bottom:16px">
+          <label>Valor (R$)</label>
+          <input type="number" id="depVal" placeholder="0.00" min="0.01" step="0.01">
+        </div>
+        <button class="btn btn-deposit" onclick="depositar()">Depositar</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Saque</div>
+        <div class="field" style="margin-bottom:12px">
+          <label>ID da conta</label>
+          <input type="number" id="saqId" placeholder="1">
+        </div>
+        <div class="field" style="margin-bottom:16px">
+          <label>Valor (R$)</label>
+          <input type="number" id="saqVal" placeholder="0.00" min="0.01" step="0.01">
+        </div>
+        <button class="btn btn-withdraw" onclick="sacar()">Sacar</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = 'http://localhost:8080/api/accounts';
+
+function brl(v) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v); }
+function cpfFmt(c) { return c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4'); }
+function dateFmt(d) { return d ? new Date(d).toLocaleDateString('pt-BR') : '—'; }
+
+function toast(msg, tipo = 'ok') {
+  const w = document.getElementById('toasts');
+  const t = document.createElement('div');
+  t.className = 'toast ' + tipo;
+  t.textContent = msg;
+  w.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+function showTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'contas') carregar();
+}
+
+async function carregar() {
+  try {
+    const res = await fetch(API);
+    if (!res.ok) throw new Error();
+    const lista = await res.json();
+    document.getElementById('dot').style.background = '#4caf7d';
+    document.getElementById('statusTxt').textContent = 'online';
+    document.getElementById('totalContas').textContent = lista.length;
+    document.getElementById('totalSaldo').textContent = brl(lista.reduce((s, a) => s + a.balance, 0));
+    const tbody = document.getElementById('tbody');
+    if (!lista.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty">Nenhuma conta cadastrada</td></tr>'; return; }
+    tbody.innerHTML = lista.map(a => `
+      <tr>
+        <td>#${a.id}</td>
+        <td style="color:#e0e0e0">${a.ownerName}</td>
+        <td>${cpfFmt(a.cpf)}</td>
+        <td><span class="badge ${a.accountType === 'CORRENTE' ? 'badge-green' : 'badge-blue'}">${a.accountType}</span></td>
+        <td style="color:#4caf7d;font-weight:500">${brl(a.balance)}</td>
+        <td>${dateFmt(a.createdAt)}</td>
+        <td><button class="btn btn-danger" onclick="excluir(${a.id})">Excluir</button></td>
+      </tr>`).join('');
+  } catch {
+    document.getElementById('dot').style.background = '#e57373';
+    document.getElementById('statusTxt').textContent = 'offline';
+    document.getElementById('tbody').innerHTML = '<tr><td colspan="7" class="empty">API offline — rode o projeto no IntelliJ</td></tr>';
+  }
+}
+
+async function criar() {
+  const body = { ownerName: document.getElementById('nome').value.trim(), cpf: document.getElementById('cpf').value.trim(), accountType: document.getElementById('tipo').value, balance: parseFloat(document.getElementById('saldo').value) || 0 };
+  if (!body.ownerName || !body.cpf) { toast('Preencha nome e CPF', 'err'); return; }
+  try {
+    const res = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (res.status === 409) { toast('CPF já cadastrado', 'err'); return; }
+    if (!res.ok) throw new Error();
+    toast('Conta criada com sucesso');
+    document.getElementById('nome').value = '';
+    document.getElementById('cpf').value = '';
+    document.getElementById('saldo').value = '';
+  } catch { toast('Erro ao criar conta', 'err'); }
+}
+
+async function excluir(id) {
+  if (!confirm(`Excluir conta #${id}?`)) return;
+  try { await fetch(`${API}/${id}`, { method: 'DELETE' }); toast('Conta excluída'); carregar(); }
+  catch { toast('Erro ao excluir', 'err'); }
+}
+
+async function depositar() {
+  const id = document.getElementById('depId').value;
+  const amount = parseFloat(document.getElementById('depVal').value);
+  if (!id || !amount) { toast('Preencha ID e valor', 'err'); return; }
+  try {
+    const res = await fetch(`${API}/${id}/deposit`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount }) });
+    if (!res.ok) throw new Error();
+    const acc = await res.json();
+    toast(`Depósito realizado. Saldo: ${brl(acc.balance)}`);
+  } catch { toast('Erro no depósito', 'err'); }
+}
+
+async function sacar() {
+  const id = document.getElementById('saqId').value;
+  const amount = parseFloat(document.getElementById('saqVal').value);
+  if (!id || !amount) { toast('Preencha ID e valor', 'err'); return; }
+  try {
+    const res = await fetch(`${API}/${id}/withdraw`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount }) });
+    if (res.status === 400) { toast('Saldo insuficiente', 'err'); return; }
+    if (!res.ok) throw new Error();
+    const acc = await res.json();
+    toast(`Saque realizado. Saldo: ${brl(acc.balance)}`);
+  } catch { toast('Erro no saque', 'err'); }
+}
+
+carregar();
+</script>
+</body>
+</html>
