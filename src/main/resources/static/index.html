@@ -240,103 +240,103 @@
 </div>
 
 <script>
-const API = 'http://localhost:8080/api/accounts';
+  const API = 'https://bank-api-production-dedb.up.railway.app/api/accounts';
 
-function brl(v) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v); }
-function cpfFmt(c) { return c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4'); }
-function dateFmt(d) { return d ? new Date(d).toLocaleDateString('pt-BR') : '—'; }
+  function brl(v) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v); }
+  function cpfFmt(c) { return c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4'); }
+  function dateFmt(d) { return d ? new Date(d).toLocaleDateString('pt-BR') : '—'; }
 
-function toast(msg, tipo = 'ok') {
-  const w = document.getElementById('toasts');
-  const t = document.createElement('div');
-  t.className = 'toast ' + tipo;
-  t.textContent = msg;
-  w.appendChild(t);
-  setTimeout(() => t.remove(), 3000);
-}
-
-function showTab(name, btn) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('tab-' + name).classList.add('active');
-  if (name === 'contas') carregar();
-}
-
-async function carregar() {
-  try {
-    const res = await fetch(API);
-    if (!res.ok) throw new Error();
-    const lista = await res.json();
-    document.getElementById('dot').style.background = '#4caf7d';
-    document.getElementById('statusTxt').textContent = 'online';
-    document.getElementById('totalContas').textContent = lista.length;
-    document.getElementById('totalSaldo').textContent = brl(lista.reduce((s, a) => s + a.balance, 0));
-    const tbody = document.getElementById('tbody');
-    if (!lista.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty">Nenhuma conta cadastrada</td></tr>'; return; }
-    tbody.innerHTML = lista.map(a => `
-      <tr>
-        <td>#${a.id}</td>
-        <td style="color:#e0e0e0">${a.ownerName}</td>
-        <td>${cpfFmt(a.cpf)}</td>
-        <td><span class="badge ${a.accountType === 'CORRENTE' ? 'badge-green' : 'badge-blue'}">${a.accountType}</span></td>
-        <td style="color:#4caf7d;font-weight:500">${brl(a.balance)}</td>
-        <td>${dateFmt(a.createdAt)}</td>
-        <td><button class="btn btn-danger" onclick="excluir(${a.id})">Excluir</button></td>
-      </tr>`).join('');
-  } catch {
-    document.getElementById('dot').style.background = '#e57373';
-    document.getElementById('statusTxt').textContent = 'offline';
-    document.getElementById('tbody').innerHTML = '<tr><td colspan="7" class="empty">API offline — rode o projeto no IntelliJ</td></tr>';
+  function toast(msg, tipo = 'ok') {
+    const w = document.getElementById('toasts');
+    const t = document.createElement('div');
+    t.className = 'toast ' + tipo;
+    t.textContent = msg;
+    w.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
   }
-}
 
-async function criar() {
-  const body = { ownerName: document.getElementById('nome').value.trim(), cpf: document.getElementById('cpf').value.trim(), accountType: document.getElementById('tipo').value, balance: parseFloat(document.getElementById('saldo').value) || 0 };
-  if (!body.ownerName || !body.cpf) { toast('Preencha nome e CPF', 'err'); return; }
-  try {
-    const res = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    if (res.status === 409) { toast('CPF já cadastrado', 'err'); return; }
-    if (!res.ok) throw new Error();
-    toast('Conta criada com sucesso');
-    document.getElementById('nome').value = '';
-    document.getElementById('cpf').value = '';
-    document.getElementById('saldo').value = '';
-  } catch { toast('Erro ao criar conta', 'err'); }
-}
+  function showTab(name, btn) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + name).classList.add('active');
+    if (name === 'contas') carregar();
+  }
 
-async function excluir(id) {
-  if (!confirm(`Excluir conta #${id}?`)) return;
-  try { await fetch(`${API}/${id}`, { method: 'DELETE' }); toast('Conta excluída'); carregar(); }
-  catch { toast('Erro ao excluir', 'err'); }
-}
+  async function carregar() {
+    try {
+      const res = await fetch(API);
+      if (!res.ok) throw new Error();
+      const lista = await res.json();
+      document.getElementById('dot').style.background = '#4caf7d';
+      document.getElementById('statusTxt').textContent = 'online';
+      document.getElementById('totalContas').textContent = lista.length;
+      document.getElementById('totalSaldo').textContent = brl(lista.reduce((s, a) => s + a.balance, 0));
+      const tbody = document.getElementById('tbody');
+      if (!lista.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty">Nenhuma conta cadastrada</td></tr>'; return; }
+      tbody.innerHTML = lista.map(a => `
+        <tr>
+          <td>#${a.id}</td>
+          <td style="color:#e0e0e0">${a.ownerName}</td>
+          <td>${cpfFmt(a.cpf)}</td>
+          <td><span class="badge ${a.accountType === 'CORRENTE' ? 'badge-green' : 'badge-blue'}">${a.accountType}</span></td>
+          <td style="color:#4caf7d;font-weight:500">${brl(a.balance)}</td>
+          <td>${dateFmt(a.createdAt)}</td>
+          <td><button class="btn btn-danger" onclick="excluir(${a.id})">Excluir</button></td>
+        </tr>`).join('');
+    } catch {
+      document.getElementById('dot').style.background = '#e57373';
+      document.getElementById('statusTxt').textContent = 'offline';
+      document.getElementById('tbody').innerHTML = '<tr><td colspan="7" class="empty">API offline — rode o projeto no IntelliJ</td></tr>';
+    }
+  }
 
-async function depositar() {
-  const id = document.getElementById('depId').value;
-  const amount = parseFloat(document.getElementById('depVal').value);
-  if (!id || !amount) { toast('Preencha ID e valor', 'err'); return; }
-  try {
-    const res = await fetch(`${API}/${id}/deposit`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount }) });
-    if (!res.ok) throw new Error();
-    const acc = await res.json();
-    toast(`Depósito realizado. Saldo: ${brl(acc.balance)}`);
-  } catch { toast('Erro no depósito', 'err'); }
-}
+  async function criar() {
+    const body = { ownerName: document.getElementById('nome').value.trim(), cpf: document.getElementById('cpf').value.trim(), accountType: document.getElementById('tipo').value, balance: parseFloat(document.getElementById('saldo').value) || 0 };
+    if (!body.ownerName || !body.cpf) { toast('Preencha nome e CPF', 'err'); return; }
+    try {
+      const res = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (res.status === 409) { toast('CPF já cadastrado', 'err'); return; }
+      if (!res.ok) throw new Error();
+      toast('Conta criada com sucesso');
+      document.getElementById('nome').value = '';
+      document.getElementById('cpf').value = '';
+      document.getElementById('saldo').value = '';
+    } catch { toast('Erro ao criar conta', 'err'); }
+  }
 
-async function sacar() {
-  const id = document.getElementById('saqId').value;
-  const amount = parseFloat(document.getElementById('saqVal').value);
-  if (!id || !amount) { toast('Preencha ID e valor', 'err'); return; }
-  try {
-    const res = await fetch(`${API}/${id}/withdraw`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount }) });
-    if (res.status === 400) { toast('Saldo insuficiente', 'err'); return; }
-    if (!res.ok) throw new Error();
-    const acc = await res.json();
-    toast(`Saque realizado. Saldo: ${brl(acc.balance)}`);
-  } catch { toast('Erro no saque', 'err'); }
-}
+  async function excluir(id) {
+    if (!confirm(`Excluir conta #${id}?`)) return;
+    try { await fetch(`${API}/${id}`, { method: 'DELETE' }); toast('Conta excluída'); carregar(); }
+    catch { toast('Erro ao excluir', 'err'); }
+  }
 
-carregar();
+  async function depositar() {
+    const id = document.getElementById('depId').value;
+    const amount = parseFloat(document.getElementById('depVal').value);
+    if (!id || !amount) { toast('Preencha ID e valor', 'err'); return; }
+    try {
+      const res = await fetch(`${API}/${id}/deposit`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount }) });
+      if (!res.ok) throw new Error();
+      const acc = await res.json();
+      toast(`Depósito realizado. Saldo: ${brl(acc.balance)}`);
+    } catch { toast('Erro no depósito', 'err'); }
+  }
+
+  async function sacar() {
+    const id = document.getElementById('saqId').value;
+    const amount = parseFloat(document.getElementById('saqVal').value);
+    if (!id || !amount) { toast('Preencha ID e valor', 'err'); return; }
+    try {
+      const res = await fetch(`${API}/${id}/withdraw`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount }) });
+      if (res.status === 400) { toast('Saldo insuficiente', 'err'); return; }
+      if (!res.ok) throw new Error();
+      const acc = await res.json();
+      toast(`Saque realizado. Saldo: ${brl(acc.balance)}`);
+    } catch { toast('Erro no saque', 'err'); }
+  }
+
+  carregar();
 </script>
 </body>
 </html>
