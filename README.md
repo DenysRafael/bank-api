@@ -31,7 +31,7 @@ git clone https://github.com/DenysRafael/bank-api.git
 
 5. Abra frontend/index.html no navegador
 
-A API estará disponível em http://localhost:8080/api/accounts
+A API estará disponível em [http://localhost:8080/api/accounts](https://bank-api-production-dedb.up.railway.app)
 
 ## 📋 Endpoints
 
